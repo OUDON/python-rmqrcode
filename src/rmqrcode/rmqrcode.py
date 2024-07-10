@@ -391,7 +391,7 @@ class rMQR:
                 try:
                     data_codeword = block.get_data_at(i)
                 except IndexError:
-                    break
+                    continue
                 else:
                     final_codewords.append(data_codeword)
                     self._logger.debug(f"Put QR data codeword {i} : {data_codeword}")
@@ -403,7 +403,7 @@ class rMQR:
                 try:
                     ecc_codeword = block.get_ecc_at(i)
                 except IndexError:
-                    break
+                    continue
                 else:
                     final_codewords.append(ecc_codeword)
                     self._logger.debug(f"Put RS data codewords {i} : {ecc_codeword}")
