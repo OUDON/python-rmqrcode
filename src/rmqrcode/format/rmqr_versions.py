@@ -577,7 +577,7 @@ rMQRVersions = {
                 {
                     "num": 1,
                     "c": 21,
-                    "k": 14,
+                    "k": 12,
                 },
             ],
             ErrorCorrectionLevel.H: [
@@ -994,7 +994,7 @@ rMQRVersions = {
             ErrorCorrectionLevel.M: [
                 {
                     "num": 1,
-                    "c": 60,
+                    "c": 61,
                     "k": 39,
                 },
             ],
