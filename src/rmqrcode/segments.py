@@ -63,7 +63,7 @@ class SegmentOptimizer:
             [[self.INF for n in range(3)] for mode in range(4)] for length in range(self.MAX_CHARACTER + 1)
         ]
         self.parents: list[list[list[tuple[int, int, int]]]] = [
-            [[-1 for n in range(3)] for mode in range(4)] for length in range(self.MAX_CHARACTER + 1)
+            [[(-1, -1, -1) for n in range(3)] for mode in range(4)] for length in range(self.MAX_CHARACTER + 1)
         ]
 
     def compute(self, data: str, version: str, ecc: ErrorCorrectionLevel):
@@ -202,7 +202,7 @@ class SegmentOptimizer:
 
         """
         best = self.INF
-        best_index: tuple[int, int, int] = (-1, -1)
+        best_index: tuple[int, int, int] = (-1, -1, -1)
         for mode in range(4):
             for unfilled_length in range(3):
                 if self.dp[len(data)][mode][unfilled_length] < best:
