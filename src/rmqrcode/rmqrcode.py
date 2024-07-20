@@ -809,30 +809,25 @@ class rMQRCore:
             Color.WHITE: "_",
             Color.BLACK: "X",
             Color.UNDEFINED: "?",
-            True: "X",
-            False: "_",
         }
 
         res = ""
         if with_quiet_zone:
-            res += (show[False] * (self._width + QUIET_ZONE_MODULES * 2) + "\n") * QUIET_ZONE_MODULES
+            res += (show[Color.WHITE] * (self._width + QUIET_ZONE_MODULES * 2) + "\n") * QUIET_ZONE_MODULES
 
         for y in range(self._height):
             if with_quiet_zone:
-                res += show[False] * QUIET_ZONE_MODULES
+                res += show[Color.WHITE] * QUIET_ZONE_MODULES
 
             for x in range(self._width):
-                if self._qr[y][x] in show:
-                    res += show[self._qr[y][x]]
-                else:
-                    res += self._qr.get_data[y][x]
+                res += show[self._qr[y][x]]
 
             if with_quiet_zone:
-                res += show[False] * QUIET_ZONE_MODULES
+                res += show[Color.WHITE] * QUIET_ZONE_MODULES
             res += "\n"
 
         if with_quiet_zone:
-            res += (show[False] * (self._width + QUIET_ZONE_MODULES * 2) + "\n") * QUIET_ZONE_MODULES
+            res += (show[Color.WHITE] * (self._width + QUIET_ZONE_MODULES * 2) + "\n") * QUIET_ZONE_MODULES
         return res
 
 
