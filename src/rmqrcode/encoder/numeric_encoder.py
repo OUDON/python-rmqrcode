@@ -22,8 +22,8 @@ class NumericEncoder(EncoderBase):
         return res
 
     @classmethod
-    def _group_by_3characters(cls, data):
-        res = []
+    def _group_by_3characters(cls, data: str):
+        res: list[str] = []
         while data != "":
             res.append(data[:3])
             data = data[3:]

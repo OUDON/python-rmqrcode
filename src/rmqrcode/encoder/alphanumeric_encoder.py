@@ -70,8 +70,8 @@ class AlphanumericEncoder(EncoderBase):
         return res
 
     @classmethod
-    def _group_by_2characters(cls, data):
-        res = []
+    def _group_by_2characters(cls, data: str):
+        res: list[str] = []
         while data != "":
             res.append(data[:2])
             data = data[2:]

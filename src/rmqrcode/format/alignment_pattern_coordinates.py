@@ -1,4 +1,4 @@
-AlignmentPatternCoordinates = {
+AlignmentPatternCoordinates: dict[int, list[int]] = {
     27: [],
     43: [21],
     59: [19, 39],
