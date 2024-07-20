@@ -275,19 +275,6 @@ class rMQR:
         """
         return self._width
 
-    def value_at(self, x: int, y: int):
-        """DEPRECATED: Returns the color at the point of (x, y).
-
-        Returns:
-            rmqrcode.Color: The color of rMQRCode at the point of (x, y).
-
-        Note:
-            This method is deprecated. Use to_list() alternatively.
-            This not includes the quiet zone.
-
-        """
-        return self._qr[y][x]
-
     def to_list(self, with_quiet_zone: bool = True):
         """Converts to two-dimensional list and returns it.
 
