@@ -1,8 +1,23 @@
+from typing import TypedDict
+
 from . import encoder
 from .errors import DataTooLongError
+from .format.error_correction_level import ErrorCorrectionLevel
 from .format.rmqr_versions import rMQRVersions
 
-encoders = [
+
+class Best(TypedDict):
+    cost: int
+    index: tuple[int, int, int]
+    """n, mode, unfilled_length"""
+
+
+class Segment(TypedDict):
+    data: str
+    encoder_class: type[encoder.encoder_base.EncoderBase]
+
+
+encoders: list[type[encoder.encoder_base.EncoderBase]] = [
     encoder.NumericEncoder,
     encoder.AlphanumericEncoder,
     encoder.ByteEncoder,
@@ -10,7 +25,7 @@ encoders = [
 ]
 
 
-def compute_length(segments, version_name):
+def compute_length(segments: list[Segment], version_name: str):
     """Computes the sum of length of the segments.
 
     Args:
@@ -44,10 +59,14 @@ class SegmentOptimizer:
     INF = 100000
 
     def __init__(self):
-        self.dp = [[[self.INF for n in range(3)] for mode in range(4)] for length in range(self.MAX_CHARACTER + 1)]
-        self.parents = [[[-1 for n in range(3)] for mode in range(4)] for length in range(self.MAX_CHARACTER + 1)]
+        self.dp: list[list[list[int]]] = [
+            [[self.INF for n in range(3)] for mode in range(4)] for length in range(self.MAX_CHARACTER + 1)
+        ]
+        self.parents: list[list[list[tuple[int, int, int]]]] = [
+            [[(-1, -1, -1) for n in range(3)] for mode in range(4)] for length in range(self.MAX_CHARACTER + 1)
+        ]
 
-    def compute(self, data, version, ecc):
+    def compute(self, data: str, version: str, ecc: ErrorCorrectionLevel):
         """Computes the optimize segmentation for the given data.
 
         Args:
@@ -75,7 +94,7 @@ class SegmentOptimizer:
         segments = self._compute_segments(path, data)
         return segments
 
-    def _compute_costs(self, data):
+    def _compute_costs(self, data: str):
         """Computes costs by dynamic programming.
 
         This method computes costs of the dynamic programming table. Define
@@ -119,7 +138,7 @@ class SegmentOptimizer:
                             self.dp[n + 1][new_mode][new_length] = self.dp[n][mode][unfilled_length] + cost
                             self.parents[n + 1][new_mode][new_length] = (n, mode, unfilled_length)
 
-    def _compute_new_state_without_mode_changing(self, character, new_mode, unfilled_length):
+    def _compute_new_state_without_mode_changing(self, character: str, new_mode: int, unfilled_length: int):
         """Computes the new state values without mode changing.
 
         Args:
@@ -144,9 +163,11 @@ class SegmentOptimizer:
         elif encoder_class == encoder.KanjiEncoder:
             new_length = 0
             cost = 13
+        else:
+            raise NotImplementedError()
         return (cost, new_length)
 
-    def _compute_new_state_with_mode_changing(self, character, new_mode, unfilled_length):
+    def _compute_new_state_with_mode_changing(self, character: str, new_mode: int, unfilled_length: int):
         """Computes the new state values with mode changing.
 
         Args:
@@ -164,10 +185,12 @@ class SegmentOptimizer:
             new_length = 1
         elif encoder_class in [encoder.ByteEncoder, encoder.KanjiEncoder]:
             new_length = 0
+        else:
+            raise NotImplementedError()
         cost = encoder_class.length(character, character_count_indicator_length)
         return (cost, new_length)
 
-    def _find_best(self, data):
+    def _find_best(self, data: str) -> Best:
         """Find the index which has the minimum costs.
 
         Args:
@@ -179,7 +202,7 @@ class SegmentOptimizer:
 
         """
         best = self.INF
-        best_index = (-1, -1)
+        best_index: tuple[int, int, int] = (-1, -1, -1)
         for mode in range(4):
             for unfilled_length in range(3):
                 if self.dp[len(data)][mode][unfilled_length] < best:
@@ -187,7 +210,7 @@ class SegmentOptimizer:
                     best_index = (len(data), mode, unfilled_length)
         return {"cost": best, "index": best_index}
 
-    def _reconstruct_path(self, best_index):
+    def _reconstruct_path(self, best_index: tuple[int, int, int]):
         """Reconstructs the path.
 
         Args:
@@ -197,7 +220,7 @@ class SegmentOptimizer:
             list: The path of minimum cost in the dynamic programming table.
 
         """
-        path = []
+        path: list[tuple[int, int, int]] = []
         index = best_index
         while index[0] != 0:
             path.append(index)
@@ -205,7 +228,7 @@ class SegmentOptimizer:
         path.reverse()
         return path
 
-    def _compute_segments(self, path, data):
+    def _compute_segments(self, path: list[tuple[int, int, int]], data: str):
         """Computes the segments.
 
         This method computes the segments. The adjacent characters has same mode are merged.
@@ -218,7 +241,7 @@ class SegmentOptimizer:
             list: The list of segments.
 
         """
-        segments = []
+        segments: list[Segment] = []
         current_segment_data = ""
         current_mode = -1
         for p in path:

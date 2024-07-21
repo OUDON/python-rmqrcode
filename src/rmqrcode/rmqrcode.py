@@ -20,6 +20,7 @@ Attributes:
 """
 
 import logging
+from typing import TypedDict, Union
 
 from . import encoder
 from . import segments as qr_segments
@@ -30,11 +31,18 @@ from .format.alignment_pattern_coordinates import AlignmentPatternCoordinates
 from .format.error_correction_level import ErrorCorrectionLevel
 from .format.generator_polynomials import GeneratorPolynomials
 from .format.mask import mask
-from .format.rmqr_versions import rMQRVersions
+from .format.rmqr_versions import BlockDef, rMQRVersions
 from .util.error_correction import compute_bch, compute_reed_solomon
 from .util.utilities import split_into_8bits
 
 QUIET_ZONE_MODULES = 2
+
+
+class _OKVersion(TypedDict):
+    version: str
+    width: int
+    height: int
+    segments: list[qr_segments.Segment]
 
 
 class rMQR:
@@ -55,7 +63,9 @@ class rMQR:
         return logger
 
     @staticmethod
-    def fit(data, ecc=ErrorCorrectionLevel.M, fit_strategy=FitStrategy.BALANCED):
+    def fit(
+        data: str, ecc: ErrorCorrectionLevel = ErrorCorrectionLevel.M, fit_strategy: FitStrategy = FitStrategy.BALANCED
+    ):
         """Compute optimized rMQR code with the rMQROptimizer class.
 
         Args:
@@ -72,7 +82,7 @@ class rMQR:
         """
         return rMQROptimizer.compute(data, ecc, fit_strategy)
 
-    def _optimized_segments(self, data):
+    def _optimized_segments(self, data: str):
         """Returns optimized segments computed by SegmentOptimizer.
 
         Args:
@@ -85,7 +95,13 @@ class rMQR:
         optimizer = qr_segments.SegmentOptimizer()
         return optimizer.compute(data, self.version_name(), self._error_correction_level)
 
-    def __init__(self, version, ecc, with_quiet_zone=True, logger=None):
+    def __init__(
+        self,
+        version: str,
+        ecc: ErrorCorrectionLevel,
+        with_quiet_zone: bool = True,
+        logger: Union[logging.Logger, None] = None,
+    ):
         self._logger = logger or rMQR._init_logger()
 
         if not rMQR.validate_version(version):
@@ -97,9 +113,9 @@ class rMQR:
         self._width = self._qr_version["width"]
         self._error_correction_level = ecc
         self._qr = rMQRCore(self._width, self._height)
-        self._segments = []
+        self._segments: list[qr_segments.Segment] = []
 
-    def add_segment(self, data, encoder_class=encoder.ByteEncoder):
+    def add_segment(self, data: str, encoder_class: type[encoder.encoder_base.EncoderBase] = encoder.ByteEncoder):
         """Adds the segment.
 
         A segment consists of data and an encoding mode.
@@ -115,7 +131,7 @@ class rMQR:
         """
         self._segments.append({"data": data, "encoder_class": encoder_class})
 
-    def add_segments(self, segments):
+    def add_segments(self, segments: list[qr_segments.Segment]):
         """Add the segments.
 
         Args:
@@ -187,7 +203,7 @@ class rMQR:
 
         return res
 
-    def _append_terminator_if_possible(self, data, data_bits_max):
+    def _append_terminator_if_possible(self, data: str, data_bits_max: int):
         """Appends the terminator.
 
         This method appends the terminator at the end of data and returns the
@@ -259,20 +275,7 @@ class rMQR:
         """
         return self._width
 
-    def value_at(self, x, y):
-        """DEPRECATED: Returns the color at the point of (x, y).
-
-        Returns:
-            rmqrcode.Color: The color of rMQRCode at the point of (x, y).
-
-        Note:
-            This method is deprecated. Use to_list() alternatively.
-            This not includes the quiet zone.
-
-        """
-        return self._qr[y][x]
-
-    def to_list(self, with_quiet_zone=True):
+    def to_list(self, with_quiet_zone: bool = True):
         """Converts to two-dimensional list and returns it.
 
         The value is 1 for the dark module and 0 for the light module.
@@ -284,7 +287,7 @@ class rMQR:
             list: Converted list.
 
         """
-        res = []
+        res: list[list[int]] = []
         if with_quiet_zone:
             for y in range(QUIET_ZONE_MODULES):
                 res.append([0] * (self.width() + QUIET_ZONE_MODULES * 2))
@@ -296,7 +299,7 @@ class rMQR:
             res = self._qr.to_binary_list()
         return res
 
-    def __str__(self, with_quiet_zone=True):
+    def __str__(self, with_quiet_zone: bool = True):
         res = f"rMQR Version R{self._height}x{self._width}:\n"
         res += self._qr.__str__(with_quiet_zone)
         return res
@@ -310,7 +313,7 @@ class rMQR:
         format_information_data = format_information_data << 12 | reminder_polynomial
         return format_information_data
 
-    def _make_codewords(self, encoded_data, codewords_num):
+    def _make_codewords(self, encoded_data: str, codewords_num: int):
         """Makes codeword sequence from encoded data.
 
         If the length of generated codeword sequence is less than the `codewords_num`,
@@ -335,7 +338,7 @@ class rMQR:
             codewords.append("00010001")
         return codewords
 
-    def _split_into_blocks(self, codewords, blocks_definition):
+    def _split_into_blocks(self, codewords: list[str], blocks_definition: list[BlockDef]):
         """Splits codewords into several blocks.
 
         Args:
@@ -347,7 +350,7 @@ class rMQR:
 
         """
         data_idx = 0
-        blocks = []
+        blocks: list[Block] = []
         for block_definition in blocks_definition:
             for i in range(block_definition["num"]):
                 data_codewords_num = block_definition["k"]
@@ -359,7 +362,7 @@ class rMQR:
                 data_idx += data_codewords_num
         return blocks
 
-    def _make_final_codewords(self, blocks):
+    def _make_final_codewords(self, blocks: list["Block"]):
         """Makes the final message codeword sequence.
 
         This method computes the final codeword sequence from the given blocks. For example,
@@ -383,7 +386,7 @@ class rMQR:
             list: The list of codeword strings.
 
         """
-        final_codewords = []
+        final_codewords: list[str] = []
         # Add data codewords
         # The last block always has the most codewords.
         for i in range(blocks[-1].data_length()):
@@ -410,7 +413,7 @@ class rMQR:
         return final_codewords
 
     @staticmethod
-    def validate_version(version_name):
+    def validate_version(version_name: str):
         """Check if the given version_name is valid
 
         Args:
@@ -437,7 +440,7 @@ class rMQROptimizer:
     """A class to compute optimized rMQR code for input data."""
 
     @staticmethod
-    def compute(data, ecc, fit_strategy):
+    def compute(data: str, ecc: ErrorCorrectionLevel, fit_strategy: FitStrategy):
         """Attempts to make an rMQR have optimized version for given data.
 
         Args:
@@ -452,9 +455,9 @@ class rMQROptimizer:
             rmqrcode.DataTooLongError: If the data is too long to encode.
 
         """
-        ok_versions = []
-        determined_width = set()
-        determined_height = set()
+        ok_versions: list[_OKVersion] = []
+        determined_width: set[int] = set()
+        determined_height: set[int] = set()
 
         for version_name, qr_version in rMQRVersions.items():
             optimizer = qr_segments.SegmentOptimizer()
@@ -481,17 +484,17 @@ class rMQROptimizer:
 
         if fit_strategy == FitStrategy.MINIMIZE_WIDTH:
 
-            def sort_key(x):
+            def sort_key(x: _OKVersion):
                 return x["width"]
 
         elif fit_strategy == FitStrategy.MINIMIZE_HEIGHT:
 
-            def sort_key(x):
+            def sort_key(x: _OKVersion):
                 return x["height"]
 
         elif fit_strategy == FitStrategy.BALANCED:
 
-            def sort_key(x):
+            def sort_key(x: _OKVersion):
                 return x["height"] * 9 + x["width"]
 
         selected = sorted(ok_versions, key=sort_key)[0]
@@ -504,12 +507,12 @@ class rMQROptimizer:
 class rMQRCore:
     "A class correspond to a grid of modules of rMQR code."
 
-    def __init__(self, width, height):
+    def __init__(self, width: int, height: int):
         self._width = width
         self._height = height
         self._qr = [[Color.UNDEFINED for x in range(self._width)] for y in range(self._height)]
 
-    def get_data(self, x, y):
+    def get_data(self, x: int, y: int):
         """Returns the module value at x-th column and y-th row.
 
         Args:
@@ -629,7 +632,7 @@ class rMQRCore:
                 if self._qr[i][j] == Color.UNDEFINED:
                     self._qr[i][j] = color
 
-    def put_format_information(self, format_information):
+    def put_format_information(self, format_information: int):
         """Format information placement.
 
         Args:
@@ -642,7 +645,7 @@ class rMQRCore:
         self._put_format_information_finder_pattern_side(format_information)
         self._put_format_information_finder_sub_pattern_side(format_information)
 
-    def _put_format_information_finder_pattern_side(self, format_information):
+    def _put_format_information_finder_pattern_side(self, format_information: int):
         """Format information placement (finder pattern side).
 
         This method computes masked format information data and puts it. The mask
@@ -664,7 +667,7 @@ class rMQRCore:
             dj = n // 5
             self._qr[si + di][sj + dj] = Color.BLACK if format_information >> n & 1 else Color.WHITE
 
-    def _put_format_information_finder_sub_pattern_side(self, format_information):
+    def _put_format_information_finder_sub_pattern_side(self, format_information: int):
         """Format information placement (finder sub pattern side).
 
         This method computes masked format information data and puts it. The mask
@@ -695,7 +698,7 @@ class rMQRCore:
             Color.BLACK if format_information >> 17 & 1 else Color.WHITE
         )
 
-    def put_data(self, final_codewords, remainder_bits_num):
+    def put_data(self, final_codewords: list[str], remainder_bits_num: int):
         """Symbol character placement.
 
         This method puts data into the encoding region of the rMQR Code. The data
@@ -715,7 +718,7 @@ class rMQRCore:
         mask_area = self._put_final_codewords(final_codewords, remainder_bits_num)
         self._apply_mask(mask_area)
 
-    def _put_final_codewords(self, final_codewords, reminder_bits_num):
+    def _put_final_codewords(self, final_codewords: list[str], reminder_bits_num: int):
         """Puts the final codeword sequence.
 
         This method puts the final codeword sequence into the encoding region of the rMQR Code.
@@ -778,7 +781,7 @@ class rMQRCore:
 
         return mask_area
 
-    def _apply_mask(self, mask_area):
+    def _apply_mask(self, mask_area: list[list[bool]]):
         """Data masking.
 
         This method applies the data mask.
@@ -801,35 +804,30 @@ class rMQRCore:
                     elif self._qr[y][x] == Color.WHITE:
                         self._qr[y][x] = Color.BLACK
 
-    def __str__(self, with_quiet_zone=True):
+    def __str__(self, with_quiet_zone: bool = True):
         show = {
             Color.WHITE: "_",
             Color.BLACK: "X",
             Color.UNDEFINED: "?",
-            True: "X",
-            False: "_",
         }
 
         res = ""
         if with_quiet_zone:
-            res += (show[False] * (self._width + QUIET_ZONE_MODULES * 2) + "\n") * QUIET_ZONE_MODULES
+            res += (show[Color.WHITE] * (self._width + QUIET_ZONE_MODULES * 2) + "\n") * QUIET_ZONE_MODULES
 
         for y in range(self._height):
             if with_quiet_zone:
-                res += show[False] * QUIET_ZONE_MODULES
+                res += show[Color.WHITE] * QUIET_ZONE_MODULES
 
             for x in range(self._width):
-                if self._qr[y][x] in show:
-                    res += show[self._qr[y][x]]
-                else:
-                    res += self._qr.get_data[y][x]
+                res += show[self._qr[y][x]]
 
             if with_quiet_zone:
-                res += show[False] * QUIET_ZONE_MODULES
+                res += show[Color.WHITE] * QUIET_ZONE_MODULES
             res += "\n"
 
         if with_quiet_zone:
-            res += (show[False] * (self._width + QUIET_ZONE_MODULES * 2) + "\n") * QUIET_ZONE_MODULES
+            res += (show[Color.WHITE] * (self._width + QUIET_ZONE_MODULES * 2) + "\n") * QUIET_ZONE_MODULES
         return res
 
 
@@ -841,13 +839,13 @@ class Block:
 
     """
 
-    def __init__(self, data_codewords_num, ecc_codewords_num):
+    def __init__(self, data_codewords_num: int, ecc_codewords_num: int):
         self._data_codewords_num = data_codewords_num
-        self._data_codewords = []
+        self._data_codewords: list[str] = []
         self._ecc_codewords_num = ecc_codewords_num
-        self._ecc_codewords = []
+        self._ecc_codewords: list[str] = []
 
-    def set_data_and_compute_ecc(self, data_codewords):
+    def set_data_and_compute_ecc(self, data_codewords: list[str]):
         """Set data and compute ecc.
 
         Args:
@@ -860,7 +858,7 @@ class Block:
         self._data_codewords = data_codewords
         self._compute_ecc_codewords()
 
-    def get_data_at(self, index):
+    def get_data_at(self, index: int):
         """Get data codeword at the index.
 
         Args:
@@ -872,7 +870,7 @@ class Block:
         """
         return self._data_codewords[index]
 
-    def get_ecc_at(self, index):
+    def get_ecc_at(self, index: int):
         """Get ecc codeword at the index.
 
         Args:

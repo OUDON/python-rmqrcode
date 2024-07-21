@@ -6,7 +6,7 @@ class EncoderBase(ABC):
 
     @classmethod
     @abstractmethod
-    def mode_indicator(cls):
+    def mode_indicator(cls) -> str:
         """Mode indicator defined in the Table 2.
 
         Returns:
@@ -17,7 +17,7 @@ class EncoderBase(ABC):
 
     @classmethod
     @abstractmethod
-    def encode(cls, data, character_count_indicator_length):
+    def encode(cls, data: str, character_count_indicator_length: int) -> str:
         """Encodes data and returns it.
 
         Args:
@@ -42,7 +42,7 @@ class EncoderBase(ABC):
 
     @classmethod
     @abstractmethod
-    def _encoded_bits(cls, data):
+    def _encoded_bits(cls, data: str) -> str:
         """Encodes data and returns it.
 
         This method encodes the raw data without the meta data like the mode
@@ -59,7 +59,7 @@ class EncoderBase(ABC):
 
     @classmethod
     @abstractmethod
-    def length(cls, data):
+    def length(cls, data: str, character_count_indicator_length: int) -> int:
         """Compute the length of the encoded bits.
 
         Args:
@@ -73,7 +73,7 @@ class EncoderBase(ABC):
 
     @classmethod
     @abstractmethod
-    def characters_num(cls, data):
+    def characters_num(cls, data: str) -> int:
         """Returns the number of the characters of the data.
 
         Args:
@@ -87,7 +87,7 @@ class EncoderBase(ABC):
 
     @classmethod
     @abstractmethod
-    def is_valid_characters(cls, data):
+    def is_valid_characters(cls, data: str) -> bool:
         """Checks whether the data does not include invalid character.
 
         Args:

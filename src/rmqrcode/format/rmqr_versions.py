@@ -1,7 +1,28 @@
+from typing import TypedDict
+
 from ..encoder import AlphanumericEncoder, ByteEncoder, KanjiEncoder, NumericEncoder
+from ..encoder.encoder_base import EncoderBase
 from .error_correction_level import ErrorCorrectionLevel
 
-rMQRVersions = {
+
+class BlockDef(TypedDict):
+    num: int
+    c: int
+    k: int
+
+
+class rMQRVersion(TypedDict):
+    version_indicator: int
+    height: int
+    width: int
+    remainder_bits: int
+    character_count_indicator_length: dict[type[EncoderBase], int]
+    codewords_total: int
+    blocks: dict[ErrorCorrectionLevel, list[BlockDef]]
+    number_of_data_bits: dict[ErrorCorrectionLevel, int]
+
+
+rMQRVersions: dict[str, rMQRVersion] = {
     "R7x43": {
         "version_indicator": 0b00000,
         "height": 7,

@@ -7,9 +7,9 @@ class ByteEncoder(EncoderBase):
         return "011"
 
     @classmethod
-    def _encoded_bits(cls, s):
+    def _encoded_bits(cls, data):
         res = ""
-        encoded = s.encode("utf-8")
+        encoded = data.encode("utf-8")
         for byte in encoded:
             res += bin(byte)[2:].zfill(8)
         return res

@@ -1,7 +1,7 @@
 # GF(2^8)
 class GaloisFields:
-    e2i = {}
-    i2e = {}
+    e2i: dict[int, int] = {}
+    i2e: dict[int, int] = {}
 
     def __init__(self):
         # Irreducible polynomial in GF(2^8)

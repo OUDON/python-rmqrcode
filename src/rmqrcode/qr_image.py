@@ -1,8 +1,13 @@
+from pathlib import Path
+from typing import Union
+
 from PIL import Image, ImageDraw
+
+from .rmqrcode import rMQR
 
 
 class QRImage:
-    def __init__(self, qr, module_size=10):
+    def __init__(self, qr: rMQR, module_size: int = 10):
         self._module_size = module_size
         qr_list = qr.to_list()
         self._img = Image.new("RGB", (len(qr_list[0]) * module_size, len(qr_list) * module_size), (255, 255, 255))
@@ -20,10 +25,10 @@ class QRImage:
 
         return np.array(self._img)
 
-    def save(self, name):
+    def save(self, name: Union[str, bytes, Path]):
         self._img.save(name)
 
-    def _make_image(self, qr_list):
+    def _make_image(self, qr_list: list[list[int]]):
         draw = ImageDraw.Draw(self._img)
         for y in range(len(qr_list)):
             for x in range(len(qr_list[0])):

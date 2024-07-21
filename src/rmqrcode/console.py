@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import argparse
 import sys
+from pathlib import Path
+from typing import Union
 
 from rmqrcode import (
     DataTooLongError,
@@ -12,12 +14,12 @@ from rmqrcode import (
 )
 
 
-def _show_error_and_exit(msg):
+def _show_error_and_exit(msg: str):
     print(msg, file=sys.stderr)
     sys.exit(1)
 
 
-def _make_qr(data, ecc, version, fit_strategy):
+def _make_qr(data: str, ecc: ErrorCorrectionLevel, version: Union[str, None], fit_strategy: FitStrategy):
     if version is None:
         qr = rMQR.fit(data, ecc=ecc, fit_strategy=fit_strategy)
     else:
@@ -30,7 +32,7 @@ def _make_qr(data, ecc, version, fit_strategy):
     return qr
 
 
-def _save_image(qr, output):
+def _save_image(qr: rMQR, output: Union[str, bytes, Path]):
     image = QRImage(qr)
     try:
         image.save(output)
