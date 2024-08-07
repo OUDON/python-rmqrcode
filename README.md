@@ -123,7 +123,8 @@ The value for `encoder_class` is listed in the below table.
 |-|-|-|
 |Numeric|NumericEncoder|0-9|
 |Alphanumeric|AlphanumericEncoder|0-9 A-Z \s $ % * + - . / :|
-|Byte|ByteEncoder|Any|
+|Byte|ByteEncoder|UTF-8 characters|
+|Byte|BareByteEncoder|Any|
 |Kanji|KanjiEncoder|from 0x8140 to 0x9FFC, from 0xE040 to 0xEBBF in Shift JIS value|
 
 ### Optimal Segmentation
